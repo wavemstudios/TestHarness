@@ -15,9 +15,10 @@
 int main(int argc , char *argv[])
 {
     int sock;
+    int resend = 0;
     struct sockaddr_in server;
     char message[1000] , server_reply[200];
-
+start:
     //Create socket
     sock = socket(AF_INET , SOCK_STREAM , 0);
     if (sock == -1)
@@ -31,7 +32,7 @@ int main(int argc , char *argv[])
  	   perror("setsockopt SO_REUSEADDR. Error");
     }
 
-    server.sin_addr.s_addr = inet_addr("192.168.204.136");
+    server.sin_addr.s_addr = inet_addr("192.168.203.67");
     server.sin_family = AF_INET;
     server.sin_port = htons( 8888 );
 
@@ -47,21 +48,30 @@ int main(int argc , char *argv[])
     //keep communicating with server
     while(1)
     {
-        printf("\nEnter APDU Command : ");
-        scanf("%s" , message);
+    	if (resend == 0){
+			printf("\nEnter APDU Command : ");
+			scanf("%s" , message);
+    	} else {
+    		printf("\nReSending APDU Command : %s\n",message);
+    	}
+
+    	resend = 0;
 
         //Send some data
-        if( send(sock , message , strlen(message) , 0) < 0)
+        if( send(sock , message , strlen(message) , MSG_NOSIGNAL) <= 0)
         {
             puts("Send failed");
             return 1;
         }
 
         //Receive a reply from the server
-        if( recv(sock , server_reply , 200 , 0) < 0)
+        if( recv(sock , server_reply , 200 , 0) <= 0)
         {
             puts("recv failed");
-            break;
+            close(sock);
+            resend = 1;
+            goto start;
+           // break;
         }
 
         printf("R-APDU : ");
