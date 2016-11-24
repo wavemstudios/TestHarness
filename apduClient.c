@@ -17,7 +17,12 @@ int main(int argc , char *argv[])
     int sock;
     int resend = 0;
     struct sockaddr_in server;
-    char message[1000] , server_reply[200];
+    char message[1000], server_reply[200], command[10];
+    unsigned char tlvtest1[] = {0x5F,0x81,0x81,0x01,0x02,0x00,0x00}; //Antenna Off
+    unsigned char tlvtest2[] = {0x5F,0x81,0x81,0x01,0x06,0x04,0x00,0x01,0x02,0x03,0x04}; //Load Polling Table
+    unsigned char tlvtest3[] = {0x5F,0x81,0x81,0x01,0x06,0x02,0x00,0x01,0x02,0x03,0x04}; //Poll For Card
+    unsigned char tlvtest4[] = {0x5F,0x84,0x81,0x15,0x06,0xFE,0x01,0x02,0x03,0x04,0x05}; //Straight Through Mode
+
 start:
     //Create socket
     sock = socket(AF_INET , SOCK_STREAM , 0);
@@ -38,7 +43,7 @@ start:
  	   perror("setsockopt SO_REUSEADDR. Error");
     }
 
-    server.sin_addr.s_addr = inet_addr("192.168.202.9");
+    server.sin_addr.s_addr = inet_addr("192.168.204.115");
     server.sin_family = AF_INET;
     server.sin_port = htons( 8888 );
 
@@ -55,16 +60,22 @@ start:
     while(1)
     {
     	if (resend == 0){
-			printf("\nEnter APDU Command : ");
-			scanf("%s" , message);
+    		printf("Select Command \n");
+    		printf("1) 0x5F,0x81,0x81,0x01,0x02,0x00,0x00 //Antenna Off \n");
+    		printf("2) 0x5F,0x81,0x81,0x01,0x06,0x04,0x00,0x01,0x02,0x03,0x04 //Load Polling Table \n");
+    		printf("3) 0x5F,0x81,0x81,0x01,0x06,0x02,0x00,0x01,0x02,0x03,0x04 //Poll For Card \n");
+    		printf("4) 0x5F,0x84,0x81,0x15,0x06,0xFE,0x01,0x02,0x03,0x04,0x05 //Straight Through Mode \n");
+
+			printf("\n\nEnter Command 1,2,3 or 4: ");
+			scanf("%s" , command);
     	} else {
-    		printf("\nReSending APDU Command : %s\n",message);
+    		printf("\nReSending Command : %s\n",tlvtest1);
     	}
 
     	resend = 0;
 
         //Send some data
-        if( send(sock , message , strlen(message) , MSG_NOSIGNAL) <= 0)
+        if( send(sock , tlvtest1 , strlen(tlvtest1) , MSG_NOSIGNAL) <= 0)
         {
             puts("Send failed");
             return 1;
