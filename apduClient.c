@@ -27,12 +27,18 @@ start:
     }
     puts("Socket created");
 
+    struct timeval tv;
+
+    tv.tv_sec = 5;  /* 30 Secs Timeout */
+
+    setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO,(struct timeval *)&tv,sizeof(struct timeval));
+
     if ( setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &(int){ 1 }, sizeof(int)) < 0 )
     {
  	   perror("setsockopt SO_REUSEADDR. Error");
     }
 
-    server.sin_addr.s_addr = inet_addr("192.168.203.67");
+    server.sin_addr.s_addr = inet_addr("192.168.202.9");
     server.sin_family = AF_INET;
     server.sin_port = htons( 8888 );
 
