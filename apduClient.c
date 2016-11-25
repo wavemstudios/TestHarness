@@ -16,12 +16,13 @@ int main(int argc , char *argv[])
 {
     int sock;
     int resend = 0;
+    int idx;
     struct sockaddr_in server;
     char message[1000], server_reply[200], command[10];
     unsigned char tlvtest1[] = {0x5F,0x81,0x81,0x01,0x02,0x00,0x00}; //Antenna Off
     unsigned char tlvtest2[] = {0x5F,0x81,0x81,0x01,0x06,0x04,0x00,0x01,0x02,0x03,0x04}; //Load Polling Table
     unsigned char tlvtest3[] = {0x5F,0x81,0x81,0x01,0x06,0x02,0x00,0x01,0x02,0x03,0x04}; //Poll For Card
-    unsigned char tlvtest4[] = {0x5F,0x84,0x81,0x15,0x06,0xFE,0x01,0x02,0x03,0x04,0x05}; //Straight Through Mode
+    unsigned char tlvtest4[] = {0x5F,0x84,0x81,0x15,0x06,0xFE,0x00,0x84,0x00,0x00,0x08}; //Straight Through Mode
 
 start:
     //Create socket
@@ -43,7 +44,7 @@ start:
  	   perror("setsockopt SO_REUSEADDR. Error");
     }
 
-    server.sin_addr.s_addr = inet_addr("192.168.204.115");
+    server.sin_addr.s_addr = inet_addr("192.168.203.74");
     server.sin_family = AF_INET;
     server.sin_port = htons( 8888 );
 
@@ -64,25 +65,31 @@ start:
     		printf("1) 0x5F,0x81,0x81,0x01,0x02,0x00,0x00 //Antenna Off \n");
     		printf("2) 0x5F,0x81,0x81,0x01,0x06,0x04,0x00,0x01,0x02,0x03,0x04 //Load Polling Table \n");
     		printf("3) 0x5F,0x81,0x81,0x01,0x06,0x02,0x00,0x01,0x02,0x03,0x04 //Poll For Card \n");
-    		printf("4) 0x5F,0x84,0x81,0x15,0x06,0xFE,0x01,0x02,0x03,0x04,0x05 //Straight Through Mode \n");
+    		printf("4) 0x5F,0x84,0x81,0x15,0x06,0xFE,0x00,0x84,0x00,0x00,0x08 //Straight Through Mode \n");
 
 			printf("\n\nEnter Command 1,2,3 or 4: ");
 			scanf("%s" , command);
     	} else {
-    		printf("\nReSending Command : %s\n",tlvtest1);
+    		printf("\nReSending Command : %s\n",tlvtest4);
     	}
+
+    	printf("\nLENGTH : %d\n",sizeof(tlvtest4));
 
     	resend = 0;
 
         //Send some data
-        if( send(sock , tlvtest1 , strlen(tlvtest1) , MSG_NOSIGNAL) <= 0)
+        if( send(sock , tlvtest4 , sizeof(tlvtest4) , MSG_NOSIGNAL) <= 0)
         {
             puts("Send failed");
             return 1;
         }
 
+        memset(&server_reply, 0, sizeof(server_reply));
+
+        int read_size;
+
         //Receive a reply from the server
-        if( recv(sock , server_reply , 200 , 0) <= 0)
+        if( (read_size = recv(sock , server_reply , 200 , 0)) <= 0)
         {
             puts("recv failed");
             close(sock);
@@ -93,6 +100,13 @@ start:
 
         printf("R-APDU : ");
         puts(server_reply);
+
+
+    	printf("REPLY DATA: ");
+    		for (idx = 0; idx < read_size; idx++){
+    				printf("%02X ", server_reply[idx]);
+    		}
+    	printf("\n");
 
         memset(&server_reply, 0, sizeof(server_reply));
     }
